@@ -12,8 +12,8 @@ export class ReportsService {
 
    // ✅ NEW: list all reports
   findAll() {
-    return this.repo.find();
-  }
+  return this.repo.find({ relations: ['user'] });
+}
 
   async createEstimate({ make, model, lng, lat, year, mileage }: GetEstimateDto) {
   // pick top 3 closest rows (no aggregation here)
