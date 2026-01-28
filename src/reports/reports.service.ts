@@ -10,19 +10,27 @@ import { GetEstimateDto } from './dtos/get-estimate.dto';
 export class ReportsService {
   constructor(@InjectRepository(Report) private repo: Repository<Report>) {}
 
-  createEstimate({ make, model, lng, lat, year, mileage }: GetEstimateDto) {
-  return this.repo
+  async createEstimate({ make, model, lng, lat, year, mileage }: GetEstimateDto) {
+  // pick top 3 closest rows (no aggregation here)
+  const subQuery = this.repo
     .createQueryBuilder('report')
-    .select('AVG(report.price)', 'price')
+    .select('report.price', 'price')
     .where('report.make = :make', { make })
     .andWhere('report.model = :model', { model })
     .andWhere('report.lng - :lng BETWEEN -5 AND 5', { lng })
     .andWhere('report.lat - :lat BETWEEN -5 AND 5', { lat })
     .andWhere('report.year - :year BETWEEN -3 AND 3', { year })
     .andWhere('report.approved IS TRUE')
-    .orderBy('ABS(report.mileage - :mileage)', 'DESC')
+    .orderBy('ABS(report.mileage - :mileage)', 'ASC')
     .setParameters({ mileage })
-    .limit(3)
+    .limit(3);
+
+  // average those 3 prices
+  return this.repo.manager
+    .createQueryBuilder()
+    .select('AVG(price)', 'price')
+    .from('(' + subQuery.getQuery() + ')', 'matched_reports')
+    .setParameters(subQuery.getParameters())
     .getRawOne();
 }
 
