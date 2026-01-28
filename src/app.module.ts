@@ -17,18 +17,33 @@ const cookieSession = require('cookie-session');
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
 
-    // ✅ IMPORTANT: use DATABASE_URL on Railway
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        url: config.get<string>('DATABASE_URL'),
-        ssl: { rejectUnauthorized: false },
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: (config: ConfigService) => {
+    const nodeEnv = config.get<string>('NODE_ENV');
+
+    // ✅ Local dev: SQLite
+    if (nodeEnv === 'development') {
+      return {
+        type: 'sqlite',
+        database: config.get<string>('DB_NAME') || 'db.sqlite',
         autoLoadEntities: true,
-        synchronize: true, // OK for simple demo (disable later for production)
-      }),
-    }),
+        synchronize: true,
+      } as any;
+    }
+
+    // ✅ Railway/prod: Postgres
+    return {
+      type: 'postgres',
+      url: config.get<string>('DATABASE_URL'),
+      ssl: { rejectUnauthorized: false },
+      autoLoadEntities: true,
+      synchronize: true,
+    } as any;
+  },
+}),
+
 
     UsersModule,
     ReportsModule,
