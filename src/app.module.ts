@@ -6,17 +6,30 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ReportsModule } from './reports/reports.module';
-import { User } from './users/user.entity';
-import { Report } from './reports/report.entity';
+
 const cookieSession = require('cookie-session');
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      // ✅ simplest: load .env locally, but Railway will use Variables
       envFilePath: `.env.${process.env.NODE_ENV}`,
     }),
-    TypeOrmModule.forRoot(),
+
+    // ✅ IMPORTANT: use DATABASE_URL on Railway
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        url: config.get<string>('DATABASE_URL'),
+        ssl: { rejectUnauthorized: false },
+        autoLoadEntities: true,
+        synchronize: true, // OK for simple demo (disable later for production)
+      }),
+    }),
+
     UsersModule,
     ReportsModule,
   ],
@@ -25,9 +38,7 @@ const cookieSession = require('cookie-session');
     AppService,
     {
       provide: APP_PIPE,
-      useValue: new ValidationPipe({
-        whitelist: true,
-      }),
+      useValue: new ValidationPipe({ whitelist: true }),
     },
   ],
 })
