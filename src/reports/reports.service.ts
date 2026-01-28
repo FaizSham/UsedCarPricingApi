@@ -10,6 +10,11 @@ import { GetEstimateDto } from './dtos/get-estimate.dto';
 export class ReportsService {
   constructor(@InjectRepository(Report) private repo: Repository<Report>) {}
 
+   // ✅ NEW: list all reports
+  findAll() {
+    return this.repo.find();
+  }
+
   async createEstimate({ make, model, lng, lat, year, mileage }: GetEstimateDto) {
   // pick top 3 closest rows (no aggregation here)
   const subQuery = this.repo
