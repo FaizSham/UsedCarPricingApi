@@ -16,7 +16,7 @@ content-type: application/json
   "password": "12345"
 }
 
-### Get the currently signed in user
+### Get the currently signed in user (run Sign in above first so the session cookie is sent)
 GET http://localhost:3000/auth/whoami
 
 ### Sign out
