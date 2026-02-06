@@ -107,10 +107,13 @@ export class UsersController {
 
   @ApiOperation({
     summary: 'Update user',
-    description: 'Updates a user by ID. All body fields are optional.',
+    description: 'Updates a user by ID. All body fields are optional. Password is hashed before storing.',
   })
   @Patch('/:id')
-  updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
+  async updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
+    if (body.password) {
+      body = { ...body, password: await this.authService.hashPassword(body.password) };
+    }
     return this.usersService.update(parseInt(id), body);
   }
 }
