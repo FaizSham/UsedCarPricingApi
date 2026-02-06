@@ -8,6 +8,7 @@ import {
   Get,
   Query,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiCookieAuth } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dtos/create-report.dto';
 import { ApproveReportDto } from './dtos/approve-report.dto';
@@ -19,24 +20,36 @@ import { AdminGuard } from '../guards/admin.guard';
 import { CurrentUser } from '../users/decorators/current-user.decorator';
 import { User } from '../users/user.entity';
 
+@ApiTags('Reports')
 @Controller('reports')
 export class ReportsController {
   constructor(private reportsService: ReportsService) {}
 
-  // ✅ List all reports
+  @ApiOperation({
+    summary: 'List all reports',
+    description: 'Returns all used car reports in the system.',
+  })
   @Get()
   @Serialize(ReportDto)
   getReports() {
     return this.reportsService.findAll();
   }
 
-  // ✅ Estimate endpoint
+  @ApiOperation({
+    summary: 'Get price estimate',
+    description:
+      'Returns an estimated price based on similar approved reports (same make/model, similar location, year, mileage).',
+  })
   @Get('/estimate')
   getEstimate(@Query() query: GetEstimateDto) {
     return this.reportsService.createEstimate(query);
   }
 
-  // ✅ Create report
+  @ApiOperation({
+    summary: 'Create report',
+    description: 'Creates a new used car report. Requires authentication.',
+  })
+  @ApiCookieAuth('express:sess')
   @Post()
   @UseGuards(AuthGuard)
   @Serialize(ReportDto)
@@ -44,7 +57,11 @@ export class ReportsController {
     return this.reportsService.create(body, user);
   }
 
-  // ✅ Approve report (admin)
+  @ApiOperation({
+    summary: 'Approve or reject report',
+    description: 'Approves or rejects a report. Admin only. Approved reports are used for estimates.',
+  })
+  @ApiCookieAuth('express:sess')
   @Patch('/:id')
   @UseGuards(AdminGuard)
   approveReport(@Param('id') id: string, @Body() body: ApproveReportDto) {
