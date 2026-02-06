@@ -23,11 +23,14 @@ const cookieSession = require('cookie-session');
   useFactory: (config: ConfigService) => {
     const nodeEnv = config.get<string>('NODE_ENV');
 
-    // ✅ Local dev: SQLite
-    if (nodeEnv === 'development') {
+    // ✅ Local dev and test: SQLite (test avoids Postgres connection refused)
+    if (nodeEnv === 'development' || nodeEnv === 'test') {
       return {
         type: 'sqlite',
-        database: config.get<string>('DB_NAME') || 'db.sqlite',
+        database:
+          nodeEnv === 'test'
+            ? 'test.sqlite'
+            : config.get<string>('DB_NAME') || 'db.sqlite',
         autoLoadEntities: true,
         synchronize: true,
       } as any;
@@ -61,10 +64,15 @@ export class AppModule {
   constructor(private configService: ConfigService) {}
 
   configure(consumer: MiddlewareConsumer) {
+    const cookieKey =
+      this.configService.get('COOKIE_KEY') ||
+      (this.configService.get('NODE_ENV') === 'test'
+        ? 'test-session-key-at-least-32-characters-long'
+        : undefined);
     consumer
       .apply(
         cookieSession({
-          keys: [this.configService.get('COOKIE_KEY')],
+          keys: [cookieKey],
         }),
       )
       .forRoutes('*');

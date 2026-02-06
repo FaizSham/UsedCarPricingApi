@@ -31,18 +31,14 @@ describe('Authentication System', () => {
 
   it('signup as a new user then get the currently logged in user', async () => {
     const email = 'asdf@asdf.com';
+    const agent = request.agent(app.getHttpServer());
 
-    const res = await request(app.getHttpServer())
+    await agent
       .post('/auth/signup')
       .send({ email, password: 'asdf' })
       .expect(201);
 
-    const cookie = res.get('Set-Cookie');
-
-    const { body } = await request(app.getHttpServer())
-      .get('/auth/whoami')
-      .set('Cookie', cookie)
-      .expect(200);
+    const { body } = await agent.get('/auth/whoami').expect(200);
 
     expect(body.email).toEqual(email);
   });
